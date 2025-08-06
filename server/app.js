@@ -1,0 +1,114 @@
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const cron = require('node-cron'); // Import node-cron
+const path = require('path');
+const fs = require('fs');
+require('dotenv').config();
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+// Create uploads directory for voicemails
+const uploadsDir = path.join(__dirname, 'Uploads/voicemails');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Serve static files for voicemail uploads
+app.use('/uploads/voicemails', express.static(uploadsDir));
+
+// MongoDB Connection
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+  .then(() => console.log('MongoDB Connected Successfully!'))
+  .catch(err => {
+    console.error('MongoDB Connection Error:', err);
+    process.exit(1);
+  });
+
+// Load routes
+console.log('Loading routes...');
+const authRoutes = require('./routes/auth');
+const contactRoutes = require('./routes/contactRoutes');
+const settingRoutes = require('./routes/settingRoutes');
+const agentRoutes = require('./routes/agentRoutes');
+const twilioRoutes = require('./routes/twilioRoutes');
+const complianceRoutes = require('./routes/compliance');
+const dncRoutes = require('./routes/dncRoutes');
+const dialerRoutes = require('./routes/dialerRoutes');
+const { cleanOldCallLogs } = require('./utils/cleanupService'); // Import cleanup function
+const dashboardRoutes = require('./routes/dashboardRoutes');
+const callLogRoutes = require('./routes/callLogRoutes'); // Your new route file
+const userRoutes = require('./routes/userRoutes');
+
+// Apply API routes
+app.use('/api/auth', authRoutes);
+app.use('/api/contacts', contactRoutes);
+app.use('/api/settings', settingRoutes);
+app.use('/api/agents', agentRoutes);
+app.use('/api/twilio', twilioRoutes);
+app.use('/api/compliance', complianceRoutes);
+app.use('/api/dnc', dncRoutes);
+app.use('/api/dialer', dialerRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+// Mount your call log routes
+app.use('/api', callLogRoutes);
+
+// Mount User Profile Routes
+app.use('/api/users', userRoutes);
+
+// Schedule the CallLog cleanup task
+// This will run once every day at 2 AM UTC (0 2 * * *)
+// You can adjust the cron schedule as needed:
+// '0 0 * * *'  -> Midnight UTC
+// '0 0 * * 0'  -> Midnight UTC every Sunday
+cron.schedule('0 2 * * *', () => {
+    console.log('Running scheduled CallLog cleanup...');
+    cleanOldCallLogs(30); // Clean up logs older than 30 days
+});
+console.log('All routes applied successfully');
+
+// Serve React frontend in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, 'client/build')));
+  
+  // Simple catch-all for React Router
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+  });
+}
+
+// Global Error Handling Middleware
+app.use((err, req, res, next) => {
+  console.error('GLOBAL ERROR HANDLER:', err.stack);
+  res.status(err.statusCode || 500).json({
+    status: err.status || 'error',
+    message: process.env.NODE_ENV === 'production' ? 'Something went wrong!' : err.message,
+  });
+});
+
+// Start Server
+app.listen(PORT, async () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`JWT_SECRET check: ${process.env.JWT_SECRET ? 'Loaded' : 'NOT LOADED - CHECK .env'}`);
+  console.log(`MONGO_URI check: ${process.env.MONGO_URI ? 'Loaded' : 'NOT LOADED - CHECK .env'}`);
+  
+  try {
+    const { startActiveCampaignWorkersOnBoot } = require('./controllers/dialerController');
+    await startActiveCampaignWorkersOnBoot();
+    console.log('✅ Active campaign workers started');
+  } catch (error) {
+    console.error('❌ Error starting campaign workers:', error);
+  }
+});
+
+module.exports = app;

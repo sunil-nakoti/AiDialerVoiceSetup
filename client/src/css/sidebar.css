@@ -1,0 +1,120 @@
+/* Custom CSS for DialEdge AI Sidebar */
+
+/* Main sidebar styles */
+.nk-sidebar {
+  transition: all 0.3s ease;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Logo container styles */
+.logo-container {
+  display: flex;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.logo-container:hover {
+  transform: scale(1.02);
+}
+
+/* Sidebar menu item styling */
+.nk-menu-item {
+  margin-bottom: 4px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.nk-menu-link22 {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  color: rgba(255, 255, 255, 0.747);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.nk-menu-link22:hover {
+  background-color: rgba(103, 103, 103, 0.426);
+  color: #fff;
+  transform: translateX(4px);
+}
+
+.nk-menu-link.active {
+  background-color: #4F46E5;
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+}
+
+.nk-menu-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+  width: 24px;
+  height: 24px;
+  transition: all 0.2s ease;
+}
+
+.nk-menu-link:hover .nk-menu-icon {
+  transform: scale(1.1);
+}
+
+.nk-menu-text {
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+/* Compact sidebar styling */
+.is-compact .nk-menu-link {
+  padding: 0.75rem 0.5rem;
+  justify-content: center;
+}
+
+.is-compact .nk-menu-text {
+  opacity: 0;
+  visibility: hidden;
+  width: 0;
+}
+
+.is-compact.has-hover .nk-menu-text {
+  opacity: 1;
+  visibility: visible;
+  width: auto;
+}
+
+.is-compact .nk-menu-icon {
+  margin-right: 0;
+}
+
+.is-compact.has-hover .nk-menu-icon {
+  margin-right: 12px;
+}
+
+/* Toggle button styling */
+.nk-nav-toggle, .nk-nav-compact {
+  color: rgba(255, 255, 255, 0.7);
+  transition: all 0.2s ease;
+}
+
+.nk-nav-toggle:hover, .nk-nav-compact:hover {
+  color: #fff;
+  transform: scale(1.1);
+}
+
+/* Overlay styling */
+.nk-sidebar-overlay {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 999;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
