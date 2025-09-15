@@ -47,7 +47,7 @@ const ImportContactModal = ({ isOpen, onClose }) => {
 
   const fetchGroups = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/contacts/groups');
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5050'}/api/contacts/groups`);
       if (!response.ok) throw new Error('Failed to fetch groups');
       const data = await response.json();
       setExistingGroups(data);
@@ -71,7 +71,7 @@ const ImportContactModal = ({ isOpen, onClose }) => {
         const formData = new FormData();
         formData.append('file', selectedFile);
         
-        const response = await fetch('http://localhost:5000/api/contacts/parse-csv', {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5050'}/api/contacts/parse-csv`, {
           method: 'POST',
           body: formData
         });
@@ -180,7 +180,7 @@ const ImportContactModal = ({ isOpen, onClose }) => {
       formData.append('file', file);
       formData.append('importConfig', JSON.stringify(importData));
       
-      const response = await fetch('http://localhost:5000/api/contacts/import', {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5050'}/api/contacts/import`, {
         method: 'POST',
         body: formData
       });

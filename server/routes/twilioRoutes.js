@@ -3,12 +3,14 @@ const {
   searchAvailableNumbers,
   purchaseNumbers,
   getPurchasedNumbers,
+  syncPurchasedNumbers,
   assignNumberToAgent,
   configureCallForwarding,
   getTwiml,
      voicemailFallback,       // <--- NEW: Import voicemailFallback
     recordVoicemailCallback, // <--- NEW: Import recordVoicemailCallback
-     exportPurchasedNumbers 
+     exportPurchasedNumbers, 
+     seedSettingsFromEnv,
 } = require('../controllers/twilioController');
 
 const router = express.Router();
@@ -16,6 +18,8 @@ const router = express.Router();
 router.get('/search', searchAvailableNumbers);
 router.post('/buy', purchaseNumbers);
 router.get('/purchased', getPurchasedNumbers);
+router.post('/sync', syncPurchasedNumbers);
+router.post('/seed-settings', seedSettingsFromEnv);
 router.put('/:id/assign', assignNumberToAgent);
 router.put('/:id/forward', configureCallForwarding);
 router.post('/twiml/:id', getTwiml);

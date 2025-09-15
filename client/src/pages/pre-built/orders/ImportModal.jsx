@@ -138,7 +138,7 @@ const handleFileSelection = (selectedFile) => {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('http://localhost:5000/api/dnc/import', {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5050'}/api/dnc/import`, {
         method: 'POST',
         body: formData,
       });

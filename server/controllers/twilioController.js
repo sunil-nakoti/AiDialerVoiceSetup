@@ -36,6 +36,26 @@ const upload = multer({
     limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB limit
 });
 
+// Seed Settings from ENV if DB is empty
+const seedSettingsFromEnv = async (req, res) => {
+    try {
+        const existing = await Setting.findOne({});
+        if (existing) {
+            return res.status(200).json({ message: 'Settings already exist. No changes made.' });
+        }
+        const sid = process.env.TWILIO_ACCOUNT_SID;
+        const token = process.env.TWILIO_AUTH_TOKEN;
+        if (!sid || !token) {
+            return res.status(400).json({ message: 'TWILIO_ACCOUNT_SID or TWILIO_AUTH_TOKEN env vars are missing.' });
+        }
+        await Setting.create({ accountSID: sid, authToken: token, provider: 'Twilio' });
+        res.status(201).json({ message: 'Settings seeded from environment.' });
+    } catch (err) {
+        console.error('Error seeding settings from env:', err.message);
+        res.status(500).json({ message: 'Failed to seed settings from env', error: err.message });
+    }
+};
+
 const getTwilioClient = async () => {
     try {
         const settings = await Setting.findOne({});
@@ -177,6 +197,41 @@ const getPurchasedNumbers = async (req, res) => {
     } catch (error) {
         console.error(`Error in getPurchasedNumbers: ${error.message}`);
         res.status(500).json({ message: 'Server error while fetching purchased numbers.', error: error.message });
+    }
+};
+
+// Fetch numbers from Twilio account and upsert into local DB
+const syncPurchasedNumbers = async (req, res) => {
+    try {
+        const client = await getTwilioClient();
+        const incoming = await client.incomingPhoneNumbers.list({ limit: 1000 });
+
+        const upserts = [];
+        for (const num of incoming) {
+            const data = {
+                phoneNumber: num.phoneNumber,
+                sid: num.sid,
+                friendlyName: num.friendlyName,
+                capabilities: num.capabilities,
+                status: num.status,
+                twilioResponse: JSON.parse(JSON.stringify(num)),
+            };
+            upserts.push(
+                TwilioNumber.updateOne(
+                    { sid: num.sid },
+                    { $set: data },
+                    { upsert: true }
+                )
+            );
+        }
+        if (upserts.length) {
+            await Promise.all(upserts);
+        }
+        const count = await TwilioNumber.countDocuments();
+        res.status(200).json({ message: 'Sync complete', totalStored: count, synced: incoming.length });
+    } catch (error) {
+        console.error('Error syncing purchased numbers:', error.message);
+        res.status(500).json({ message: 'Failed to sync numbers from Twilio', error: error.message });
     }
 };
 
@@ -451,6 +506,8 @@ module.exports = {
     searchAvailableNumbers,
     purchaseNumbers,
     getPurchasedNumbers,
+    syncPurchasedNumbers,
+    seedSettingsFromEnv,
     assignNumberToAgent,
     configureCallForwarding,
     getTwiml,

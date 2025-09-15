@@ -18,6 +18,7 @@ export default function BuyNumbers() {
   const [purchasedNumbers, setPurchasedNumbers] = useState([]);
   const [isLoadingSearch, setIsLoadingSearch] = useState(false);
   const [isLoadingPurchase, setIsLoadingPurchase] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
    const [isLoadingExport, setIsLoadingExport] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [message, setMessage] = useState(null);
@@ -77,6 +78,23 @@ export default function BuyNumbers() {
     setVoicemailFile(null);
     setVoicemailFileName(number.voicemailUrl ? 'Current voicemail file set' : 'No file selected.');
     setShowForwardModal(true);
+  };
+
+  const handleSyncFromTwilio = async () => {
+    setMessage(null);
+    setIsSyncing(true);
+    try {
+      await apiClient.post(`/api/twilio/sync`);
+      const purchasedNumbersRes = await apiClient.get(`/api/twilio/purchased`);
+      setPurchasedNumbers(purchasedNumbersRes.data.numbers || []);
+      setMessage({ type: 'success', text: 'Synced numbers from Twilio.' });
+    } catch (error) {
+      console.error('Error syncing numbers:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to sync numbers.';
+      setMessage({ type: 'error', text: errorMessage, errors: error.response?.data?.errors });
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const handleCloseForwardModal = () => {
@@ -341,9 +359,14 @@ export default function BuyNumbers() {
          <div className="search-section">
                     <div className="search-header">
                         <h3 className="search-title">Search Phone Numbers</h3>
-                        <button className="export-button" onClick={handleExportNumbers} disabled={isLoadingExport}>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                          <button className="export-button" onClick={handleSyncFromTwilio} disabled={isSyncing}>
+                            <RefreshCw className="download-icon" /> {isSyncing ? 'Syncing...' : 'Sync from Twilio'}
+                          </button>
+                          <button className="export-button" onClick={handleExportNumbers} disabled={isLoadingExport}>
                             <Download className="download-icon" /> {isLoadingExport ? 'Exporting...' : 'Export Numbers'}
-                        </button>
+                          </button>
+                        </div>
                     </div>
 
           {message && (

@@ -36,8 +36,8 @@ if (!DISCORD_WEBHOOK_URL) {
 const normalizePhoneNumber = (phone) => {
     if (!phone) return null;
     const trimmed = phone.trim().replace(/[^\d+]/g, '');
-    if (/^\d{10}$/.test(trimmed)) return `+1${trimmed}`;
-    if (/^0\d{10}$/.test(trimmed)) return `+1${trimmed.slice(1)}`;
+    if (/^\d{10}$/.test(trimmed)) return `+91${trimmed}`;
+    if (/^0\d{10}$/.test(trimmed)) return `+91${trimmed.slice(1)}`;
     if (/^\+[1-9]\d{7,14}$/.test(trimmed)) return trimmed;
     return null;
 };
@@ -54,7 +54,7 @@ const processContactsInBackground = async (campaignId, contactGroupId, campaignC
         // Preload DNC entries and normalize
         const dncSet = new Set((await DNCContact.find({}, { phone: 1 })).flatMap(({ phone }) => {
             const norm = normalizePhoneNumber(phone);
-            return norm ? [norm, norm.slice(3)] : [];
+            return norm ? [norm, norm.slice(3)] : []; // For +91 numbers, slice(3) gives 10-digit number
         }));
 
         // Preload all existing logs for deduplication
@@ -252,7 +252,7 @@ exports.createCampaign = async (req, res) => {
       for (const phone of uniqueNumbers) {
         let normalizedPhone = phone;
         if (/^\d{10}$/.test(phone)) {
-          normalizedPhone = `+91${phone}`; // Add +1 for US 10-digit numbers
+          normalizedPhone = `+91${phone}`; // Add +91 for Indian 10-digit numbers
         } else if (!/^\+[1-9]\d{1,14}$/.test(normalizedPhone)) {
           invalidNumbers.push({ contactId: contact._id, phone });
           continue;
@@ -268,9 +268,9 @@ exports.createCampaign = async (req, res) => {
                     dncCheckNumbers.push(normalizedPhone.substring(3)); // e.g., '8006258302' from '+918006258302'
                 }
                 // Add similar checks for other country codes if applicable (e.g., for +1 US numbers)
-                // if (normalizedPhone.startsWith('+1') && normalizedPhone.length === 11) {
-                //     dncCheckNumbers.push(normalizedPhone.substring(2)); // Removes '+1'
-                // }
+                if (normalizedPhone.startsWith('+1') && normalizedPhone.length === 12) {
+                    dncCheckNumbers.push(normalizedPhone.substring(2)); // Removes '+1'
+                }
 
                 // Perform the DNC lookup using $in to find if any of the formats exist in the DNC list
                 const isDNC = await DNCContact.findOne({ phone: { $in: dncCheckNumbers } });
@@ -640,7 +640,7 @@ exports.outboundIvr = async (req, res) => {
     const decodedCustomerPhoneNumber = decodeURIComponent(customerPhoneNumber);
 
     const normalizePhone = (phone) => {
-        return phone.replace(/\D/g, '').replace(/^1/, ''); // keep only digits, strip 1 prefix
+        return phone.replace(/\D/g, '').replace(/^91/, ''); // keep only digits, strip 91 prefix
     };
 
     const normalizedPhone = normalizePhone(decodedCustomerPhoneNumber); // Use the decoded, trimmed version for normalization
@@ -1266,7 +1266,7 @@ const processCampaignCalls = async (campaignId) => {
       from: queuedLogEntry.callerId,
       // url: `${process.env.TWILIO_WEBHOOK_BASE_URL}/api/dialer/twilio-webhook`,
        // Pass the customer's phoneNumber and the Twilio number making the call to the IVR endpoint
-            url: `${process.env.TWILIO_WEBHOOK_BASE_URL}/api/dialer/outbound-ivr?customerPhoneNumber=${queuedLogEntry.phoneNumber}&twilioCallerId=${campaign.callerId}`,
+            url: `${process.env.TWILIO_WEBHOOK_BASE_URL}/api/dialer/outbound-ivr?customerPhoneNumber=${queuedLogEntry.phoneNumber}&twilioCallerId=${queuedLogEntry.callerId}`,
             method: 'GET', // 👈 This is the missing piece!
       statusCallback: `${process.env.TWILIO_WEBHOOK_BASE_URL}/api/dialer/twilio-status-callback`,
       statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed'],

@@ -14,11 +14,24 @@ const getTwilioClient = async () => {
   }
 
   try {
+    // Prefer DB settings if present; otherwise fall back to env vars
+    let accountSID;
+    let authToken;
+
     const settings = await Setting.findOne({});
-    if (!settings || !settings.accountSID || !settings.authToken) {
-      throw new Error('Twilio credentials not found in settings.');
+    if (settings && settings.accountSID && settings.authToken) {
+      accountSID = settings.accountSID;
+      authToken = settings.authToken;
+    } else {
+      accountSID = process.env.TWILIO_ACCOUNT_SID;
+      authToken = process.env.TWILIO_AUTH_TOKEN;
     }
-    twilioClientInstance = twilio(settings.accountSID, settings.authToken);
+
+    if (!accountSID || !authToken) {
+      throw new Error('Twilio credentials not found. Add them in Settings or set TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN in .env');
+    }
+
+    twilioClientInstance = twilio(accountSID, authToken);
     console.log('Twilio client initialized.');
     return twilioClientInstance;
   } catch (error) {

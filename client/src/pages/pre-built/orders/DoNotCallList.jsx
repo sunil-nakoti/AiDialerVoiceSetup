@@ -48,7 +48,7 @@ export default function DoNotCallList() {
         ...(endDate && { endDate }),
       }).toString();
 
-      const response = await fetch(`http://localhost:5000/api/dnc?${query}`);
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5050'}/api/dnc?${query}`);
       const { success, data, totalContacts } = await response.json();
 
       if (success) {
@@ -75,7 +75,7 @@ export default function DoNotCallList() {
 
   const handleImportSuccess = async (importedContacts) => {
     try {
-      const response = await fetch('http://localhost:5000/api/dnc', {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5050'}/api/dnc`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(importedContacts),
@@ -99,7 +99,7 @@ export default function DoNotCallList() {
 
   const handleDelete = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/dnc/${deleteContactId}`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5050'}/api/dnc/${deleteContactId}`, {
         method: 'DELETE',
       });
       const { success } = await response.json();
@@ -143,7 +143,7 @@ export default function DoNotCallList() {
   const confirmUnblock = async () => {
     try {
       const promises = selectedContacts.map(id =>
-        fetch(`http://localhost:5000/api/dnc/${id}`, {
+        fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5050'}/api/dnc/${id}`, {
           method: 'DELETE',
         })
       );
@@ -168,7 +168,7 @@ export default function DoNotCallList() {
 
   const handleSingleUnblock = async (id) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/dnc/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5050'}/api/dnc/${id}`, {
         method: 'DELETE',
       });
       const { success } = await response.json();
@@ -185,7 +185,7 @@ export default function DoNotCallList() {
 
   const handleExport = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/dnc/export');
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5050'}/api/dnc/export`);
       const csvContent = await response.text();
       const blob = new Blob([csvContent], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);

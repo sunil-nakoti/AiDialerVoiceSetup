@@ -64,7 +64,7 @@ const Login = () => {
     setErrorVal(""); // Clear previous errors
 
     try {
-      const response = await fetch(`http://localhost:5000/api/auth/login`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5050'}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

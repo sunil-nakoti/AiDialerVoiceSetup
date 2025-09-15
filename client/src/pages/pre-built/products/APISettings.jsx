@@ -13,7 +13,7 @@ export default function APISettings() {
   const [isSaving, setIsSaving] = useState(false);
 
   // Base URL for your API, adjust if your frontend isn't served from the same domain
-  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5050';
 
 
   // --- Fetch settings on component mount ---
