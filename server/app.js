@@ -96,7 +96,7 @@ if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, 'client/build')));
   
   // Simple catch-all for React Router (Express 5 / path-to-regexp v6 compatible)
- app.get('*', (req, res) => {
+  app.get('/:path(.*)', (req, res) => {
     res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
   });
 }
