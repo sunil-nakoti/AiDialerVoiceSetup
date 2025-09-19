@@ -10,7 +10,8 @@ const moment = require('moment-timezone'); // ADDED: Import moment for date form
 // Configure Multer for file uploads
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const uploadDir = 'Uploads/voicemails';
+        // Use lowercase 'uploads' and an absolute path to avoid case and CWD issues in production
+        const uploadDir = path.join(__dirname, '../uploads/voicemails');
         if (!fs.existsSync(uploadDir)) {
             fs.mkdirSync(uploadDir, { recursive: true });
         }
@@ -281,7 +282,7 @@ const configureCallForwarding = [
                 timeout: Number(timeout) || 10,
             };
             if (req.file) {
-                updateData.voicemailUrl = `/Uploads/voicemails/${req.file.filename}`; // Updated path to match multer config
+                updateData.voicemailUrl = `/uploads/voicemails/${req.file.filename}`; // Lowercase path to match static serving
             }
             const updatedNumber = await TwilioNumber.findByIdAndUpdate(
                 id,

@@ -9,18 +9,23 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5050;
 
-// Create uploads directory for voicemails
-const uploadsDir = path.join(__dirname, 'Uploads/voicemails');
+// Create uploads directory for voicemails (use lowercase to avoid case issues on Linux)
+const uploadsDir = path.join(__dirname, 'uploads/voicemails');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
 // Middleware
+// Configure CORS. Allow localhost during development and any additional domains via ALLOWED_ORIGINS.
+const defaultOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173'];
+const envOrigins = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+const allowedOrigins = [...new Set([...defaultOrigins, ...envOrigins])];
+
 app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'http://127.0.0.1:5173'
-  ],
+  origin: allowedOrigins,
   methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization'],
   credentials: true,
