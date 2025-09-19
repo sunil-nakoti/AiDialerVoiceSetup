@@ -95,9 +95,12 @@ console.log('All routes applied successfully');
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, 'client/build')));
   
-  // Simple catch-all for React Router (Express 5 / path-to-regexp v6 compatible)
-  app.get('/:path(.*)', (req, res) => {
-    res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+  // Serve index.html for non-API GET requests (avoid path patterns to be Express 5 safe)
+  app.use((req, res, next) => {
+    if (req.method === 'GET' && !req.path.startsWith('/api')) {
+      return res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+    }
+    next();
   });
 }
 
