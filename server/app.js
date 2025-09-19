@@ -38,11 +38,8 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files for voicemail uploads
 app.use('/uploads/voicemails', express.static(uploadsDir));
 
-// MongoDB Connection
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
+// MongoDB Connection (Mongoose 8: deprecated options removed)
+mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB Connected Successfully!'))
   .catch(err => {
     console.error('MongoDB Connection Error:', err);
@@ -91,17 +88,39 @@ cron.schedule('0 2 * * *', () => {
 });
 console.log('All routes applied successfully');
 
-// Serve React frontend in production
+// Health check endpoint (always available)
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
+// Serve React frontend in production only if explicitly enabled and present
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, 'client/build')));
-  
-  // Serve index.html for non-API GET requests (avoid path patterns to be Express 5 safe)
-  app.use((req, res, next) => {
-    if (req.method === 'GET' && !req.path.startsWith('/api')) {
-      return res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
-    }
-    next();
-  });
+  const clientBuildDir = path.join(__dirname, 'client', 'build');
+  const indexHtmlPath = path.join(clientBuildDir, 'index.html');
+  const serveClient = process.env.SERVE_CLIENT === 'true' && fs.existsSync(indexHtmlPath);
+
+  if (serveClient) {
+    app.use(express.static(clientBuildDir));
+    // Serve index.html for non-API GET requests
+    app.use((req, res, next) => {
+      if (req.method === 'GET' && !req.path.startsWith('/api')) {
+        return res.sendFile(indexHtmlPath);
+      }
+      next();
+    });
+  } else {
+    const frontendUrl = process.env.FRONTEND_URL;
+    // Provide a simple root handler to avoid ENOENT errors when no client build exists
+    app.get('/', (req, res) => {
+      if (frontendUrl) {
+        return res.redirect(frontendUrl);
+      }
+      res.status(200).json({
+        status: 'ok',
+        message: 'API server running. No client build served. Set SERVE_CLIENT=true and include client/build to serve static frontend.',
+      });
+    });
+  }
 }
 
 // Global Error Handling Middleware
